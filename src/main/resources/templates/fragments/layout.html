@@ -73,9 +73,17 @@
                     </a>
                 </li>
             </ul>
-            <span class="navbar-text small text-light">
-                <i class="bi bi-circle-fill text-success me-1" style="font-size: 8px;"></i>Sistema Operacional
-            </span>
+            <div th:if="${usuarioLogado != null}" class="d-flex align-items-center gap-3 ms-lg-3">
+                <span class="navbar-text small text-light d-flex align-items-center">
+                    <i class="bi bi-person-circle text-primary me-2 fs-6"></i>
+                    <span class="text-white fw-semibold" th:text="${usuarioLogado}">admin</span>
+                </span>
+                <form th:action="@{/logout}" method="post" class="d-inline m-0">
+                    <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" title="Encerrar sessão">
+                        <i class="bi bi-box-arrow-right me-1"></i>Sair
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 </nav>
