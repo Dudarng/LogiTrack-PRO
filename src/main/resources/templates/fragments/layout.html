@@ -49,7 +49,7 @@
 
 <nav th:fragment="navbar(activeTab)" class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
     <div class="container">
-        <a class="navbar-brand text-primary fw-bold" th:href="@{/manutencoes}">
+        <a class="navbar-brand text-primary fw-bold" th:href="@{/dashboard}">
             <i class="bi bi-truck text-primary me-2"></i>LogiTrack <span class="text-white">Pro</span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navContent">
@@ -58,6 +58,11 @@
         <div class="collapse navbar-collapse" id="navContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
+                    <a class="nav-link" th:classappend="${activeTab == 'dashboard'} ? ' active fw-semibold' : ''" th:href="@{/dashboard}">
+                        <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" th:classappend="${activeTab == 'manutencoes'} ? ' active fw-semibold' : ''" th:href="@{/manutencoes}">
                         <i class="bi bi-tools me-1"></i>Agendamento de Manutenção
                     </a>
@@ -65,11 +70,6 @@
                 <li class="nav-item">
                     <a class="nav-link text-muted" href="#" tabindex="-1" aria-disabled="true" title="Disponível em breve">
                         <i class="bi bi-map me-1"></i>Viagens
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-muted" href="#" tabindex="-1" aria-disabled="true" title="Disponível em breve">
-                        <i class="bi bi-speedometer2 me-1"></i>Dashboard
                     </a>
                 </li>
             </ul>

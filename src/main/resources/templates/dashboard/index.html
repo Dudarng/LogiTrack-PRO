@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: header('Dashboard de Análise')}"></head>
+<body>
+
+<nav th:replace="~{fragments/layout :: navbar('dashboard')}"></nav>
+
+<main class="main-content py-4">
+    <div class="container">
+
+        <!-- Alerta de Veículo Inexistente / Aviso -->
+        <div th:if="${mensagemAlerta}" class="alert alert-warning alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span th:text="${mensagemAlerta}">Aviso</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Cabeçalho e Filtro por Veículo -->
+        <div class="card shadow-sm mb-4 bg-white border-0">
+            <div class="card-body p-4">
+                <div class="row align-items-center gy-3">
+                    <div class="col-lg-7">
+                        <h2 class="h3 fw-bold mb-1 text-dark">
+                            <i class="bi bi-speedometer2 text-primary me-2"></i>Dashboard de Inteligência e Frota
+                        </h2>
+                        <p class="text-muted mb-0 small">
+                            Métricas analíticas consolidadas em tempo real via SQL nativo.
+                        </p>
+                    </div>
+                    <div class="col-lg-5">
+                        <form th:action="@{/dashboard}" method="get" class="d-flex gap-2 justify-content-lg-end">
+                            <div class="flex-grow-1" style="max-width: 320px;">
+                                <select name="veiculoId" class="form-select form-select-sm shadow-sm" onchange="this.form.submit()">
+                                    <option value="" th:selected="${dashboard.filtroVeiculoId == null}">
+                                        -- Toda a Frota --
+                                    </option>
+                                    <option th:each="v : ${veiculos}" 
+                                            th:value="${v.id}" 
+                                            th:text="${v.descricaoCompleta}" 
+                                            th:selected="${v.id == dashboard.filtroVeiculoId}">
+                                        ABC-1234 - Fiorino (Leve)
+                                    </option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-primary shadow-sm px-3">
+                                <i class="bi bi-funnel me-1"></i>Filtrar
+                            </button>
+                            <a th:if="${dashboard.filtroVeiculoId != null}" 
+                               th:href="@{/dashboard}" 
+                               class="btn btn-sm btn-outline-secondary shadow-sm" 
+                               title="Remover Filtro">
+                                <i class="bi bi-x-lg"></i>
+                            </a>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cards das Principais Métricas (Linha 1) -->
+        <div class="row g-4 mb-4">
+
+            <!-- Card 1: Total de KM Percorrido -->
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm border-0 border-start border-primary border-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-uppercase text-muted fw-semibold small">Total de KM Percorrido</span>
+                            <div class="bg-primary-subtle text-primary rounded-circle p-2 d-inline-flex">
+                                <i class="bi bi-geo-alt-fill fs-5"></i>
+                            </div>
+                        </div>
+                        <h3 class="fw-bold mb-1 text-dark" 
+                            th:text="${#numbers.formatDecimal(dashboard.totalKm, 1, 'POINT', 2, 'COMMA')} + ' km'">
+                            0,00 km
+                        </h3>
+                        <small class="text-muted d-block mt-2">
+                            <i class="bi bi-truck me-1"></i>
+                            <span th:text="${dashboard.filtroVeiculoDescricao}">Toda a Frota</span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Projeção Financeira do Mês Atual -->
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm border-0 border-start border-success border-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-uppercase text-muted fw-semibold small">Projeção Financeira (Mês Atual)</span>
+                            <div class="bg-success-subtle text-success rounded-circle p-2 d-inline-flex">
+                                <i class="bi bi-cash-stack fs-5"></i>
+                            </div>
+                        </div>
+                        <h3 class="fw-bold mb-1 text-dark" 
+                            th:text="'R$ ' + ${#numbers.formatDecimal(dashboard.projecaoFinanceira, 1, 'POINT', 2, 'COMMA')}">
+                            R$ 0,00
+                        </h3>
+                        <small class="text-muted d-block mt-2">
+                            <i class="bi bi-calendar-event me-1"></i>Estimativa total de manutenções no mês
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3: Ranking de Utilização (Líder em KM) -->
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm border-0 border-start border-warning border-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="text-uppercase text-muted fw-semibold small">Ranking de Utilização (Líder)</span>
+                            <div class="bg-warning-subtle text-warning rounded-circle p-2 d-inline-flex">
+                                <i class="bi bi-trophy-fill fs-5"></i>
+                            </div>
+                        </div>
+                        <div th:if="${dashboard.hasVeiculoLider()}">
+                            <h4 class="fw-bold mb-0 text-dark" th:text="${dashboard.veiculoLider.veiculoDescricao}">
+                                XYZ-9876 - Volvo FH
+                            </h4>
+                            <span class="badge bg-secondary-subtle text-secondary-emphasis border mt-1" 
+                                  th:text="${dashboard.veiculoLider.tipo}">PESADO</span>
+                            <small class="text-muted d-block mt-2">
+                                <i class="bi bi-speedometer me-1"></i>
+                                <span class="fw-semibold text-dark" 
+                                      th:text="${#numbers.formatDecimal(dashboard.veiculoLider.totalKm, 1, 'POINT', 2, 'COMMA')} + ' km'">0,00 km</span> acumulados
+                            </small>
+                        </div>
+                        <div th:if="${!dashboard.hasVeiculoLider()}" class="py-2">
+                            <p class="text-muted mb-0 small fst-italic">Nenhuma viagem realizada registrada.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Seção 2: Volume por Categoria (Leve vs Pesado) -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="h6 fw-bold mb-0 text-dark">
+                    <i class="bi bi-pie-chart-fill text-primary me-2"></i>Volume de Viagens por Categoria (Leve vs Pesado)
+                </h5>
+                <span class="badge bg-light text-muted border px-2 py-1 small">
+                    Total: <strong class="text-dark" th:text="${dashboard.totalViagensRealizadas}">0</strong> viagens concluídas
+                </span>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-4 align-items-center">
+                    <div class="col-md-6" th:each="cat : ${dashboard.volumeCategorias}">
+                        <div class="p-3 rounded border bg-light">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold text-dark fs-6">
+                                    <i class="bi bi-truck me-1" th:if="${cat.tipo == 'PESADO'}"></i>
+                                    <i class="bi bi-car-front me-1" th:if="${cat.tipo == 'LEVE'}"></i>
+                                    Categoria <span th:text="${cat.tipo}">LEVE</span>
+                                </span>
+                                <span class="fw-bold text-dark fs-5" th:text="${cat.totalViagens} + ' viagens'">
+                                    0 viagens
+                                </span>
+                            </div>
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar" 
+                                     th:classappend="${cat.tipo == 'PESADO'} ? 'bg-indigo bg-dark' : 'bg-primary'"
+                                     role="progressbar" 
+                                     th:style="'width: ' + ${cat.percentual} + '%;'" 
+                                     th:aria-valuenow="${cat.percentual}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100"></div>
+                            </div>
+                            <small class="text-muted d-block text-end mt-1 fw-semibold" 
+                                   th:text="${#numbers.formatDecimal(cat.percentual, 1, 'POINT', 1, 'COMMA')} + '%'">
+                                0.0%
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção 3: Cronograma das Próximas 5 Manutenções Agendadas -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="h6 fw-bold mb-0 text-dark">
+                    <i class="bi bi-calendar-check-fill text-primary me-2"></i>Cronograma das Próximas 5 Manutenções Agendadas
+                </h5>
+                <a th:href="@{/manutencoes}" class="btn btn-sm btn-outline-primary shadow-sm">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Ver Todas
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light border-bottom">
+                            <tr>
+                                <th class="text-center" style="width: 70px;">ID</th>
+                                <th>Veículo</th>
+                                <th>Data de Início</th>
+                                <th>Previsão de Término</th>
+                                <th>Tipo de Serviço</th>
+                                <th class="text-end">Custo Estimado</th>
+                                <th class="text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${!dashboard.hasCronograma()}">
+                                <td colspan="7" class="text-center py-4 text-muted fst-italic">
+                                    <i class="bi bi-calendar-x fs-2 d-block mb-2 text-muted"></i>
+                                    Nenhuma manutenção futura agendada no momento.
+                                </td>
+                            </tr>
+                            <tr th:each="c : ${dashboard.cronograma}">
+                                <td class="text-center fw-semibold text-muted" th:text="${c.id}">1</td>
+                                <td>
+                                    <span class="fw-bold text-dark" th:text="${c.veiculoPlaca}">ABC-1234</span>
+                                    <small class="text-muted d-block" th:text="${c.veiculoModelo}">Fiorino</small>
+                                </td>
+                                <td>
+                                    <span class="fw-medium text-dark text-nowrap" 
+                                          th:text="${#temporals.format(c.dataInicio, 'dd/MM/yyyy')}">12/10/2026</span>
+                                </td>
+                                <td>
+                                    <span th:if="${c.dataFinalizacao != null}" 
+                                          class="text-nowrap" 
+                                          th:text="${#temporals.format(c.dataFinalizacao, 'dd/MM/yyyy')}">13/10/2026</span>
+                                    <span th:if="${c.dataFinalizacao == null}" class="text-muted small fst-italic">Em aberto</span>
+                                </td>
+                                <td>
+                                    <span class="text-dark" th:text="${c.tipoServico}">Troca de Pastilhas</span>
+                                </td>
+                                <td class="text-end fw-semibold text-dark">
+                                    <span th:if="${c.custoEstimado != null}" 
+                                          th:text="'R$ ' + ${#numbers.formatDecimal(c.custoEstimado, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</span>
+                                    <span th:if="${c.custoEstimado == null}" class="text-muted">-</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge rounded-pill px-3 py-2" 
+                                          th:classappend="'badge-status-' + ${c.status}"
+                                          th:text="${c.status == 'EM_REALIZACAO' ? 'Em Realização' : (c.status == 'PENDENTE' ? 'Pendente' : 'Concluída')}">
+                                        Pendente
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+
+</body>
+</html>
