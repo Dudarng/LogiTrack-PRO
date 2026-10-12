@@ -1,161 +1,79 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: header('Manutenções')}"></head>
-<body>
+<html lang="pt-BR" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: htmlHead('Agendamento de Manutenção')}"></head>
+<body><div class="app">
+<header th:replace="~{fragments/layout :: navbar('manutencoes')}"></header>
+<main class="main">
+  <!-- Feedback flash -->
+  <div th:if="${mensagemSucesso}" class="alert alert-ok" role="status" th:text="${mensagemSucesso}">Operação realizada com sucesso.</div>
+  <div th:if="${mensagemErro}" class="alert alert-err" role="alert" th:text="${mensagemErro}">Ocorreu um erro ao processar a operação.</div>
 
-<nav th:replace="~{fragments/layout :: navbar('manutencoes')}"></nav>
-
-<main class="main-content py-4">
-    <div class="container">
-
-        <!-- Mensagens de Feedback Flash -->
-        <div th:if="${mensagemSucesso}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i>
-            <span th:text="${mensagemSucesso}">Sucesso</span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-
-        <div th:if="${mensagemErro}" class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            <span th:text="${mensagemErro}">Erro</span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-
-        <!-- Cabeçalho da Página -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h2 class="h3 fw-bold mb-1 text-dark">Agendamento de Manutenção</h2>
-                <p class="text-muted mb-0 small">Gerencie as ordens de serviço e cronogramas preventivos da frota.</p>
+  <div class="top">
+    <div><h1>Agendamento de Manutenção</h1>
+      <div class="sub">Gerencie as ordens de serviço e cronogramas preventivos da frota.</div></div>
+    <div class="top-actions"><a class="btn" th:href="@{/manutencoes/novo}">+ Novo Agendamento</a></div>
+  </div>
+  <section class="panel" style="padding:10px 14px">
+    <div class="table-wrap"><table>
+      <thead><tr><th>ID</th><th>Veículo</th><th>Início</th><th>Previsão / Fim</th><th>Serviço</th><th class="r">Custo</th><th>Status</th><th>Ações</th></tr></thead>
+      <tbody>
+        <tr th:if="${pagina.totalElements == 0}">
+          <td colspan="8" style="text-align:center;padding:28px 16px;color:var(--muted)">
+            Nenhum registro de manutenção cadastrado.
+          </td>
+        </tr>
+        <tr th:each="m : ${pagina.content}">
+          <td th:text="${m.id}">3</td>
+          <td>
+            <div class="pl" th:text="${m.veiculoPlaca}">KJG-1122</div>
+            <div class="m" th:text="${m.veiculoModelo + (m.veiculoTipo != null ? ' · ' + m.veiculoTipo.descricao : '')}">Mercedes Sprinter · Leve</div>
+          </td>
+          <td th:text="${#temporals.format(m.dataInicio, 'dd/MM/yyyy')}">20/05/2024</td>
+          <td>
+            <span th:if="${m.dataFinalizacao != null}" th:text="${#temporals.format(m.dataFinalizacao, 'dd/MM/yyyy')}">20/05/2024</span>
+            <i th:if="${m.dataFinalizacao == null}" class="m">Em aberto</i>
+          </td>
+          <td th:text="${m.tipoServico}">Troca de Pneus</td>
+          <td class="r pl">
+            <span th:if="${m.custoEstimado != null}" th:text="'R$ ' + ${#numbers.formatDecimal(m.custoEstimado, 1, 'POINT', 2, 'COMMA')}">R$ 2.200,00</span>
+            <span th:if="${m.custoEstimado == null}" class="m">-</span>
+          </td>
+          <td>
+            <span class="badge"
+                  th:classappend="${m.status.name() == 'PENDENTE' ? 'pe' : (m.status.name() == 'EM_REALIZACAO' ? 'ru' : 'ok')}"
+                  th:text="${m.status.descricao}">Concluída</span>
+          </td>
+          <td>
+            <div th:if="${!m.concluida}" class="actions">
+              <a class="icon-btn" th:href="@{/manutencoes/{id}/editar(id=${m.id})}" aria-label="Editar" title="Editar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4"/></svg>
+              </a>
+              <form th:action="@{/manutencoes/{id}/excluir(id=${m.id})}" method="post" onsubmit="return confirm('Tem certeza que deseja excluir esta manutenção?');">
+                <button class="icon-btn danger" type="submit" aria-label="Excluir" title="Excluir">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
+                </button>
+              </form>
             </div>
-            <div>
-                <a th:href="@{/manutencoes/novo}" class="btn btn-primary shadow-sm">
-                    <i class="bi bi-plus-lg me-1"></i>Novo Agendamento
-                </a>
+            <div th:if="${m.concluida}">
+              <span class="m">Bloqueada</span>
             </div>
-        </div>
+          </td>
+        </tr>
+      </tbody>
+    </table></div>
+  </section>
 
-        <!-- Card da Tabela de Listagem -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light border-bottom">
-                            <tr>
-                                <th class="text-center" style="width: 70px;">ID</th>
-                                <th>Veículo</th>
-                                <th>Início</th>
-                                <th>Previsão / Fim</th>
-                                <th>Tipo de Serviço</th>
-                                <th class="text-end">Custo Estimado</th>
-                                <th class="text-center">Status</th>
-                                <th class="text-center" style="width: 160px;">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:if="${pagina.totalElements == 0}">
-                                <td colspan="8" class="text-center py-5 text-muted">
-                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                                    Nenhum registro de manutenção cadastrado.
-                                </td>
-                            </tr>
-                            <tr th:each="m : ${pagina.content}">
-                                <td class="text-center fw-semibold text-muted" th:text="${m.id}">1</td>
-                                <td>
-                                    <span class="fw-bold text-dark" th:text="${m.veiculoPlaca}">ABC-1234</span>
-                                    <small class="text-muted d-block" th:text="${m.veiculoModelo}">Fiorino</small>
-                                    <span th:if="${m.veiculoTipo != null}" 
-                                          class="badge bg-secondary-subtle text-secondary-emphasis border mt-1" 
-                                          style="font-size: 0.7rem;"
-                                          th:text="${m.veiculoTipo.descricao}">Leve</span>
-                                </td>
-                                <td>
-                                    <span class="text-nowrap" th:text="${#temporals.format(m.dataInicio, 'dd/MM/yyyy')}">01/01/2026</span>
-                                </td>
-                                <td>
-                                    <span th:if="${m.dataFinalizacao != null}" class="text-nowrap" th:text="${#temporals.format(m.dataFinalizacao, 'dd/MM/yyyy')}">02/01/2026</span>
-                                    <span th:if="${m.dataFinalizacao == null}" class="text-muted small fst-italic">Em aberto</span>
-                                </td>
-                                <td>
-                                    <span class="fw-medium text-dark" th:text="${m.tipoServico}">Troca de Óleo</span>
-                                </td>
-                                <td class="text-end fw-semibold text-dark">
-                                    <span th:if="${m.custoEstimado != null}" 
-                                          th:text="'R$ ' + ${#numbers.formatDecimal(m.custoEstimado, 1, 'POINT', 2, 'COMMA')}">R$ 350,00</span>
-                                    <span th:if="${m.custoEstimado == null}" class="text-muted">-</span>
-                                </td>
-                                <td class="text-center">
-                                    <span class="badge rounded-pill px-3 py-2" 
-                                          th:classappend="'badge-status-' + ${m.status.name()}"
-                                          th:text="${m.status.descricao}">Pendente</span>
-                                </td>
-                                <td class="text-center">
-                                    <div th:if="${!m.concluida}" class="btn-group btn-group-sm" role="group">
-                                        <a th:href="@{/manutencoes/{id}/editar(id=${m.id})}" 
-                                           class="btn btn-outline-primary" 
-                                           title="Editar Manutenção">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <form th:action="@{/manutencoes/{id}/excluir(id=${m.id})}" 
-                                              method="post" 
-                                              class="d-inline"
-                                              onsubmit="return confirm('Confirma a exclusão desta manutenção?');">
-                                            <button type="submit" 
-                                                    class="btn btn-outline-danger" 
-                                                    title="Excluir Manutenção">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                    <div th:if="${m.concluida}">
-                                        <span class="badge bg-light text-muted border py-1 px-2" title="Manutenções concluídas não podem ser alteradas ou excluídas">
-                                            <i class="bi bi-lock-fill me-1"></i>Bloqueada
-                                        </span>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+  <!-- Paginação -->
+  <nav th:if="${pagina.totalPages > 1}" class="pager" aria-label="Paginação">
+    <a th:if="${pagina.hasPrevious()}" th:href="@{/manutencoes(page=${pagina.number - 1})}">Anterior</a>
+    <span th:unless="${pagina.hasPrevious()}" class="off">Anterior</span>
 
-            <!-- Rodapé da Tabela com Paginação -->
-            <div class="card-footer bg-white border-top py-3" th:if="${pagina.totalPages > 0}">
-                <div class="row align-items-center">
-                    <div class="col-md-6 text-center text-md-start text-muted small mb-2 mb-md-0">
-                        Exibindo <span class="fw-semibold" th:text="${pagina.numberOfElements}">10</span> 
-                        de <span class="fw-semibold" th:text="${pagina.totalElements}">12</span> manutenções 
-                        (Página <span class="fw-semibold" th:text="${pagina.number + 1}">1</span> de <span class="fw-semibold" th:text="${pagina.totalPages}">2</span>)
-                    </div>
-                    <div class="col-md-6" th:if="${pagina.totalPages > 1}">
-                        <nav aria-label="Navegação da paginação">
-                            <ul class="pagination pagination-sm justify-content-center justify-content-md-end mb-0">
-                                <li class="page-item" th:classappend="${pagina.first} ? 'disabled'">
-                                    <a class="page-link" th:href="@{/manutencoes(page=${pagina.number - 1})}">
-                                        <i class="bi bi-chevron-left"></i> Anterior
-                                    </a>
-                                </li>
-                                <li class="page-item" 
-                                    th:each="p : ${#numbers.sequence(0, pagina.totalPages - 1)}" 
-                                    th:classappend="${p == pagina.number} ? 'active'">
-                                    <a class="page-link" th:href="@{/manutencoes(page=${p})}" th:text="${p + 1}">1</a>
-                                </li>
-                                <li class="page-item" th:classappend="${pagina.last} ? 'disabled'">
-                                    <a class="page-link" th:href="@{/manutencoes(page=${pagina.number + 1})}">
-                                        Próxima <i class="bi bi-chevron-right"></i>
-                                    </a>
-                                </li>
-                            </ul>
-                        </nav>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <th:block th:each="i : ${#numbers.sequence(0, pagina.totalPages - 1)}">
+      <span th:if="${i == pagina.number}" class="on" aria-current="page" th:text="${i + 1}">1</span>
+      <a th:unless="${i == pagina.number}" th:href="@{/manutencoes(page=${i})}" th:text="${i + 1}">2</a>
+    </th:block>
 
-    </div>
-</main>
-
-<footer th:replace="~{fragments/layout :: footer}"></footer>
-<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
-
-</body>
-</html>
+    <a th:if="${pagina.hasNext()}" th:href="@{/manutencoes(page=${pagina.number + 1})}">Próxima</a>
+    <span th:unless="${pagina.hasNext()}" class="off">Próxima</span>
+  </nav>
+</main></div></body></html>

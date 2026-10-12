@@ -1,103 +1,80 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:fragment="header(title)">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${title} + ' - LogiTrack Pro'">LogiTrack Pro</title>
-    <!-- Bootstrap 5.3 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f8f9fa;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        .navbar-brand {
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-        .main-content {
-            flex: 1 0 auto;
-        }
-        .card {
-            border: none;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            border-radius: 0.5rem;
-        }
-        .table th {
-            font-weight: 600;
-            background-color: #f1f3f5;
-        }
-        .badge-status-PENDENTE {
-            background-color: #ffc107;
-            color: #000;
-        }
-        .badge-status-EM_REALIZACAO {
-            background-color: #0dcaf0;
-            color: #000;
-        }
-        .badge-status-CONCLUIDA {
-            background-color: #198754;
-            color: #fff;
-        }
-    </style>
+<html lang="pt-BR" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+
+<head th:fragment="htmlHead(title)">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark light">
+    <title th:text="${title} + ' — LogiTrack Pro'">LogiTrack Pro</title>
+
+    <script th:src="@{/js/theme.js}"></script>
+    <link rel="stylesheet" th:href="@{/css/logitrack.css}">
 </head>
+
 <body>
 
-<nav th:fragment="navbar(activeTab)" class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
-    <div class="container">
-        <a class="navbar-brand text-primary fw-bold" th:href="@{/dashboard}">
-            <i class="bi bi-truck text-primary me-2"></i>LogiTrack <span class="text-white">Pro</span>
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navContent">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navContent">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <a class="nav-link" th:classappend="${activeTab == 'dashboard'} ? ' active fw-semibold' : ''" th:href="@{/dashboard}">
-                        <i class="bi bi-speedometer2 me-1"></i>Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" th:classappend="${activeTab == 'manutencoes'} ? ' active fw-semibold' : ''" th:href="@{/manutencoes}">
-                        <i class="bi bi-tools me-1"></i>Agendamento de Manutenção
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-muted" href="#" tabindex="-1" aria-disabled="true" title="Disponível em breve">
-                        <i class="bi bi-map me-1"></i>Viagens
-                    </a>
-                </li>
-            </ul>
-            <div th:if="${usuarioLogado != null}" class="d-flex align-items-center gap-3 ms-lg-3">
-                <span class="navbar-text small text-light d-flex align-items-center">
-                    <i class="bi bi-person-circle text-primary me-2 fs-6"></i>
-                    <span class="text-white fw-semibold" th:text="${usuarioLogado}">admin</span>
-                </span>
-                <form th:action="@{/logout}" method="post" class="d-inline m-0">
-                    <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" title="Encerrar sessão">
-                        <i class="bi bi-box-arrow-right me-1"></i>Sair
-                    </button>
-                </form>
-            </div>
+    <header th:fragment="navbar(activeTab)" class="nav">
+        <div class="brand">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M2 6h12v10H2zM14 9h4l4 4v3h-8"></path>
+                <circle cx="6" cy="18" r="2"></circle>
+                <circle cx="17" cy="18" r="2"></circle>
+            </svg>
+            <div>&nbsp;Logi<span>Track</span> Pro</div>
         </div>
-    </div>
-</nav>
+        <a th:href="@{/dashboard}" class="nav-link" th:classappend="${activeTab == 'dashboard'} ? 'on' : ''">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 11l8-7 8 7v9H4z"></path>
+            </svg>
+            Dashboard
+        </a>
+        <a th:href="@{/manutencoes}" class="nav-link" th:classappend="${activeTab == 'manutencoes'} ? 'on' : ''">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M14 7l3-3 3 3-3 3zM4 20l9-9M3 17l4 4"></path>
+            </svg>
+            Agendamento
+        </a>
+        <div class="nav-spacer"></div>
+        <button type="button" class="icon-btn theme-toggle" data-theme-toggle aria-pressed="true"
+            aria-label="Modo escuro" title="Alternar tema claro/escuro">
+            <span class="i-sun">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="4"></circle>
+                    <path
+                        d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4">
+                    </path>
+                </svg>
+            </span>
+            <span class="i-moon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"></path>
+                </svg>
+            </span>
+        </button>
+        <div class="user" th:if="${usuarioLogado != null}">
+            <span class="avatar"
+                th:text="${#strings.isEmpty(usuarioLogado) ? '?' : #strings.toUpperCase(#strings.substring(usuarioLogado, 0, 1))}">A</span>
+            <span th:text="${usuarioLogado}">admin</span>
+        </div>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="nav-link" aria-label="Sair">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9"></path>
+                </svg>
+                Sair
+            </button>
+        </form>
+    </header>
 
-<footer th:fragment="footer" class="footer mt-auto py-3 bg-white border-top text-center text-muted small">
-    <div class="container">
-        <span>LogiTrack Pro &copy; 2026 - Gestão Eficiente de Frotas e Manutenções</span>
-    </div>
-</footer>
-
-<th:block th:fragment="scripts">
-    <!-- Bootstrap 5.3 JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</th:block>
+    <footer th:fragment="footer" style="display:none"></footer>
+    <th:block th:fragment="scripts"></th:block>
 
 </body>
+
 </html>

@@ -111,6 +111,31 @@ class AutenticacaoIntegrationTest {
     }
 
     @Test
+    @DisplayName("Página de login pública deve conter data-theme-toggle e não conter bootstrap")
+    void deveConterDataThemeToggleENaoConterBootstrapNaPaginaDeLogin() throws Exception {
+        mockMvc.perform(get("/login"))
+                .andExpect(status().isOk())
+                .andExpect(result -> {
+                    String html = result.getResponse().getContentAsString().toLowerCase();
+                    assertThat(html).contains("data-theme-toggle");
+                    assertThat(html).doesNotContain("bootstrap");
+                });
+    }
+
+    @Test
+    @DisplayName("Recursos estáticos essenciais (/fonts/**, /css/**, /js/**) devem ser acessíveis sem autenticação com status 200")
+    void devePermitirAcessoPublicoAosRecursosEstaticos() throws Exception {
+        mockMvc.perform(get("/fonts/poppins-400.woff2"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/css/logitrack.css"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/js/theme.js"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     @WithMockUser(username = "admin", roles = {"ADMIN"})
     @DisplayName("Com usuário autenticado (@WithMockUser), /dashboard responde 200 OK")
     void devePermitirAcessoAoDashboardComUsuarioAutenticado() throws Exception {
