@@ -35,6 +35,8 @@ public class ManutencaoController {
             Model model) {
         Page<ManutencaoResponse> pagina = manutencaoService.listarPaginado(pageable);
         model.addAttribute("pagina", pagina);
+        model.addAttribute("veiculos", veiculoService.listarTodos());
+        model.addAttribute("statusList", StatusManutencao.values());
         return "manutencao/lista";
     }
 

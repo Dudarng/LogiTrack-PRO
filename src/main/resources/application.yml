@@ -2,6 +2,12 @@ server:
   port: ${PORT:8080}
   forward-headers-strategy: framework
 
+logitrack:
+  demo:
+    enabled: ${DEMO_LOGIN:false}
+    username: admin
+    password: admin123
+
 spring:
   application:
     name: logitrack-pro

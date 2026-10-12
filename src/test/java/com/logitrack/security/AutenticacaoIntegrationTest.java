@@ -133,6 +133,31 @@ class AutenticacaoIntegrationTest {
 
         mockMvc.perform(get("/js/theme.js"))
                 .andExpect(status().isOk());
+
+        mockMvc.perform(get("/js/login-demo.js"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Com demo desligado por padrão, GET /login não contém o botão nem a senha no HTML")
+    void deveOcultarCredenciaisEBotaoDemoQuandoDesligado() throws Exception {
+        mockMvc.perform(get("/login"))
+                .andExpect(status().isOk())
+                .andExpect(result -> {
+                    String html = result.getResponse().getContentAsString();
+                    assertThat(html).doesNotContain("Usar credenciais de demonstração");
+                    assertThat(html).doesNotContain("Ambiente de demonstração");
+                    assertThat(html).doesNotContain("btnDemoLogin");
+                    assertThat(html).doesNotContain("data-pass");
+                    assertThat(html).doesNotContain("login-demo.js");
+                });
+    }
+
+    @Test
+    @DisplayName("Recurso estático /js/login-demo.js deve ser acessível sem autenticação com status 200")
+    void devePermitirAcessoPublicoAoScriptLoginDemo() throws Exception {
+        mockMvc.perform(get("/js/login-demo.js"))
+                .andExpect(status().isOk());
     }
 
     @Test

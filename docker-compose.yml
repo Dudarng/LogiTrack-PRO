@@ -26,6 +26,7 @@ services:
       DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-logitrack}
       DB_USERNAME: ${POSTGRES_USER:-postgres}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DEMO_LOGIN: ${DEMO_LOGIN:-true}
       TZ: America/Sao_Paulo
     depends_on:
       db:

@@ -7,11 +7,12 @@
   <!-- Feedback flash -->
   <div th:if="${mensagemSucesso}" class="alert alert-ok" role="status" th:text="${mensagemSucesso}">Operação realizada com sucesso.</div>
   <div th:if="${mensagemErro}" class="alert alert-err" role="alert" th:text="${mensagemErro}">Ocorreu um erro ao processar a operação.</div>
+  <div id="flashAlertDynamic" class="alert alert-ok" role="status" style="display:none;margin-bottom:14px"></div>
 
   <div class="top">
     <div><h1>Agendamento de Manutenção</h1>
       <div class="sub">Gerencie as ordens de serviço e cronogramas preventivos da frota.</div></div>
-    <div class="top-actions"><a class="btn" th:href="@{/manutencoes/novo}">+ Novo Agendamento</a></div>
+    <div class="top-actions"><button type="button" class="btn" id="btnNovoAgendamento">+ Novo Agendamento</button></div>
   </div>
   <section class="panel" style="padding:10px 14px">
     <div class="table-wrap"><table>
@@ -45,14 +46,25 @@
           </td>
           <td>
             <div th:if="${!m.concluida}" class="actions">
-              <a class="icon-btn" th:href="@{/manutencoes/{id}/editar(id=${m.id})}" aria-label="Editar" title="Editar">
+              <button type="button" class="icon-btn btn-open-edit"
+                      th:data-id="${m.id}"
+                      th:data-veiculo-id="${m.veiculoId}"
+                      th:data-inicio="${#temporals.format(m.dataInicio, 'yyyy-MM-dd')}"
+                      th:data-fim="${m.dataFinalizacao != null ? #temporals.format(m.dataFinalizacao, 'yyyy-MM-dd') : ''}"
+                      th:data-servico="${m.tipoServico}"
+                      th:data-custo="${m.custoEstimado != null ? m.custoEstimado : ''}"
+                      th:data-status="${m.status.name()}"
+                      aria-label="Editar" title="Editar">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4"/></svg>
-              </a>
-              <form th:action="@{/manutencoes/{id}/excluir(id=${m.id})}" method="post" onsubmit="return confirm('Tem certeza que deseja excluir esta manutenção?');">
-                <button class="icon-btn danger" type="submit" aria-label="Excluir" title="Excluir">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
-                </button>
-              </form>
+              </button>
+              <button type="button" class="icon-btn danger btn-open-delete"
+                      th:data-id="${m.id}"
+                      th:data-placa="${m.veiculoPlaca}"
+                      th:data-modelo="${m.veiculoModelo}"
+                      th:data-servico="${m.tipoServico}"
+                      aria-label="Excluir" title="Excluir">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
+              </button>
             </div>
             <div th:if="${m.concluida}">
               <span class="m">Bloqueada</span>
@@ -76,4 +88,458 @@
     <a th:if="${pagina.hasNext()}" th:href="@{/manutencoes(page=${pagina.number + 1})}">Próxima</a>
     <span th:unless="${pagina.hasNext()}" class="off">Próxima</span>
   </nav>
-</main></div></body></html>
+
+  <div id="modalCreate" class="modal-overlay" aria-hidden="true" role="dialog" aria-labelledby="modalCreateTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2 id="modalCreateTitle">Novo Agendamento</h2>
+          <div class="sub">Preencha os dados da ordem de serviço.</div>
+        </div>
+        <button type="button" class="modal-close" data-modal-close aria-label="Fechar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="createModalAlert" class="alert alert-err" style="display:none;margin-bottom:16px;"></div>
+      <form id="formCreate" method="post" th:action="@{/manutencoes}" novalidate>
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+        <div class="form-grid">
+          <div class="field full">
+            <label for="createVeiculo">Veículo <span style="color:var(--err-fg)">*</span></label>
+            <select class="input" id="createVeiculo" name="veiculoId" required>
+              <option value="">Selecione…</option>
+              <option th:each="v : ${veiculos}" th:value="${v.id}" th:text="${v.descricaoCompleta}"></option>
+            </select>
+            <div class="field-error" id="err-create-veiculoId" style="display:none;"></div>
+          </div>
+          <div class="field">
+            <label for="createInicio">Data de início <span style="color:var(--err-fg)">*</span></label>
+            <input class="input" id="createInicio" name="dataInicio" type="date" required>
+            <div class="field-error" id="err-create-dataInicio" style="display:none;"></div>
+          </div>
+          <div class="field">
+            <label for="createFim">Finalização prevista</label>
+            <input class="input" id="createFim" name="dataFinalizacao" type="date">
+            <div class="field-error" id="err-create-dataFinalizacao" style="display:none;"></div>
+          </div>
+          <div class="field full">
+            <label for="createServico">Tipo de serviço <span style="color:var(--err-fg)">*</span></label>
+            <input class="input" id="createServico" name="tipoServico" placeholder="Ex.: Troca de pneus" maxlength="100" required>
+            <div class="field-error" id="err-create-tipoServico" style="display:none;"></div>
+          </div>
+          <div class="field">
+            <label for="createCusto">Custo estimado (R$) <span style="color:var(--err-fg)">*</span></label>
+            <input class="input" id="createCusto" name="custoEstimado" type="number" step="0.01" min="0" placeholder="0,00" required>
+            <div class="field-error" id="err-create-custoEstimado" style="display:none;"></div>
+          </div>
+          <div class="field">
+            <label for="createStatus">Status <span style="color:var(--err-fg)">*</span></label>
+            <select class="input" id="createStatus" name="status" required>
+              <option value="">Selecione…</option>
+              <option th:each="st : ${statusList}" th:value="${st.name()}" th:text="${st.descricao}" th:selected="${st.name() == 'PENDENTE'}"></option>
+            </select>
+            <div class="field-error" id="err-create-status" style="display:none;"></div>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-ghost" data-modal-close>Cancelar</button>
+          <button type="submit" class="btn" id="btnSubmitCreate">Salvar agendamento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modalEdit" class="modal-overlay" aria-hidden="true" role="dialog" aria-labelledby="modalEditTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2 id="modalEditTitle">Editar Agendamento</h2>
+          <div class="sub">Atualize os dados da ordem de serviço.</div>
+        </div>
+        <button type="button" class="modal-close" data-modal-close aria-label="Fechar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="editModalAlert" class="alert alert-err" style="display:none;margin-bottom:16px;"></div>
+      <form id="formEdit" method="post" action="" novalidate>
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+        <div class="form-grid">
+          <div class="field full">
+            <label for="editVeiculo">Veículo <span style="color:var(--err-fg)">*</span></label>
+            <select class="input" id="editVeiculo" name="veiculoId" required>
+              <option value="">Selecione…</option>
+              <option th:each="v : ${veiculos}" th:value="${v.id}" th:text="${v.descricaoCompleta}"></option>
+            </select>
+            <div class="field-error" id="err-edit-veiculoId" style="display:none;"></div>
+          </div>
+          <div class="field">
+            <label for="editInicio">Data de início <span style="color:var(--err-fg)">*</span></label>
+            <input class="input" id="editInicio" name="dataInicio" type="date" required>
+            <div class="field-error" id="err-edit-dataInicio" style="display:none;"></div>
+          </div>
+          <div class="field">
+            <label for="editFim">Finalização prevista</label>
+            <input class="input" id="editFim" name="dataFinalizacao" type="date">
+            <div class="field-error" id="err-edit-dataFinalizacao" style="display:none;"></div>
+          </div>
+          <div class="field full">
+            <label for="editServico">Tipo de serviço <span style="color:var(--err-fg)">*</span></label>
+            <input class="input" id="editServico" name="tipoServico" placeholder="Ex.: Troca de pneus" maxlength="100" required>
+            <div class="field-error" id="err-edit-tipoServico" style="display:none;"></div>
+          </div>
+          <div class="field">
+            <label for="editCusto">Custo estimado (R$) <span style="color:var(--err-fg)">*</span></label>
+            <input class="input" id="editCusto" name="custoEstimado" type="number" step="0.01" min="0" placeholder="0,00" required>
+            <div class="field-error" id="err-edit-custoEstimado" style="display:none;"></div>
+          </div>
+          <div class="field">
+            <label for="editStatus">Status <span style="color:var(--err-fg)">*</span></label>
+            <select class="input" id="editStatus" name="status" required>
+              <option value="">Selecione…</option>
+              <option th:each="st : ${statusList}" th:value="${st.name()}" th:text="${st.descricao}"></option>
+            </select>
+            <div class="field-error" id="err-edit-status" style="display:none;"></div>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-ghost" data-modal-close>Cancelar</button>
+          <button type="submit" class="btn" id="btnSubmitEdit">Atualizar agendamento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modalDelete" class="modal-overlay" aria-hidden="true" role="dialog" aria-labelledby="modalDeleteTitle">
+    <div class="modal-card modal-sm">
+      <div class="modal-alert-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+      <h2 id="modalDeleteTitle" style="margin:0 0 8px;font-size:18px;font-weight:600">Excluir Permanentemente?</h2>
+      <div class="sub" style="font-size:13px;line-height:1.5;margin-bottom:12px">
+        Você está prestes a excluir este agendamento <strong>permanentemente</strong>. Esta ação não poderá ser desfeita.
+      </div>
+      <div class="modal-preview-box">
+        <div><strong>Agendamento:</strong> <span id="delModalId">#--</span></div>
+        <div><strong>Veículo:</strong> <span id="delModalVeiculo">--</span></div>
+        <div><strong>Serviço:</strong> <span id="delModalServico">--</span></div>
+      </div>
+      <form id="formDelete" method="post" action="">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+        <div style="display:flex;gap:10px;justify-content:center">
+          <button type="button" class="btn btn-ghost" data-modal-close>Cancelar</button>
+          <button type="submit" class="btn-danger">Sim, Excluir</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</main></div>
+
+<script>
+  (function () {
+    const modalCreate = document.getElementById('modalCreate');
+    const modalEdit = document.getElementById('modalEdit');
+    const modalDelete = document.getElementById('modalDelete');
+    const formCreate = document.getElementById('formCreate');
+    const formEdit = document.getElementById('formEdit');
+    const formDelete = document.getElementById('formDelete');
+    const btnCreate = document.getElementById('btnNovoAgendamento');
+    const dynamicFlash = document.getElementById('flashAlertDynamic');
+
+    try {
+      const pendingSuccess = sessionStorage.getItem('flashSucesso');
+      if (pendingSuccess && dynamicFlash) {
+        dynamicFlash.textContent = pendingSuccess;
+        dynamicFlash.style.display = 'block';
+        sessionStorage.removeItem('flashSucesso');
+      }
+    } catch (e) {}
+
+    function openModal(modal) {
+      if (!modal) return;
+      modal.classList.add('active');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal(modal) {
+      if (!modal) return;
+      modal.classList.remove('active');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    function closeAllModals() {
+      closeModal(modalCreate);
+      closeModal(modalEdit);
+      closeModal(modalDelete);
+    }
+
+    function clearErrors(prefix) {
+      const alertBox = document.getElementById(prefix + 'ModalAlert');
+      if (alertBox) {
+        alertBox.textContent = '';
+        alertBox.style.display = 'none';
+      }
+      const modal = prefix === 'create' ? modalCreate : modalEdit;
+      if (modal) {
+        modal.querySelectorAll('.input.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        modal.querySelectorAll('.field-error').forEach(el => {
+          el.textContent = '';
+          el.style.display = 'none';
+        });
+      }
+    }
+
+    function showFieldError(prefix, fieldName, message) {
+      const errorDiv = document.getElementById('err-' + prefix + '-' + fieldName);
+      const input = document.getElementById(prefix + fieldName.charAt(0).toUpperCase() + fieldName.slice(1));
+      if (input) input.classList.add('is-invalid');
+      if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+      }
+    }
+
+    function setupInputClearError(modal) {
+      if (!modal) return;
+      modal.querySelectorAll('.input').forEach(input => {
+        ['input', 'change'].forEach(evt => {
+          input.addEventListener(evt, () => {
+            if (input.classList.contains('is-invalid')) {
+              input.classList.remove('is-invalid');
+              const parentField = input.closest('.field');
+              if (parentField) {
+                const err = parentField.querySelector('.field-error');
+                if (err) {
+                  err.textContent = '';
+                  err.style.display = 'none';
+                }
+              }
+            }
+          });
+        });
+      });
+    }
+
+    setupInputClearError(modalCreate);
+    setupInputClearError(modalEdit);
+
+    if (btnCreate) {
+      btnCreate.addEventListener('click', () => {
+        formCreate.reset();
+        clearErrors('create');
+        document.getElementById('createInicio').value = new Date().toISOString().split('T')[0];
+        document.getElementById('createStatus').value = 'PENDENTE';
+        openModal(modalCreate);
+      });
+    }
+
+    document.querySelectorAll('.btn-open-edit').forEach(btn => {
+      btn.addEventListener('click', () => {
+        clearErrors('edit');
+        const id = btn.getAttribute('data-id');
+        formEdit.action = '/manutencoes/' + id;
+        document.getElementById('modalEditTitle').textContent = 'Editar Agendamento #' + id;
+        document.getElementById('editVeiculo').value = btn.getAttribute('data-veiculo-id') || '';
+        document.getElementById('editInicio').value = btn.getAttribute('data-inicio') || '';
+        document.getElementById('editFim').value = btn.getAttribute('data-fim') || '';
+        document.getElementById('editServico').value = btn.getAttribute('data-servico') || '';
+        document.getElementById('editCusto').value = btn.getAttribute('data-custo') || '';
+        document.getElementById('editStatus').value = btn.getAttribute('data-status') || '';
+        openModal(modalEdit);
+      });
+    });
+
+    document.querySelectorAll('.btn-open-delete').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        formDelete.action = '/manutencoes/' + id + '/excluir';
+        document.getElementById('delModalId').textContent = '#' + id;
+        const placa = btn.getAttribute('data-placa') || '';
+        const modelo = btn.getAttribute('data-modelo') || '';
+        document.getElementById('delModalVeiculo').textContent = placa + (modelo ? ' · ' + modelo : '');
+        document.getElementById('delModalServico').textContent = btn.getAttribute('data-servico') || '';
+        openModal(modalDelete);
+      });
+    });
+
+    document.querySelectorAll('[data-modal-close]').forEach(btn => {
+      btn.addEventListener('click', closeAllModals);
+    });
+
+    [modalCreate, modalEdit, modalDelete].forEach(modal => {
+      if (modal) {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) closeAllModals();
+        });
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeAllModals();
+    });
+
+    function validateClientSide(form, prefix) {
+      let hasError = false;
+      const veiculo = form.querySelector('[name="veiculoId"]').value.trim();
+      const inicio = form.querySelector('[name="dataInicio"]').value.trim();
+      const fim = form.querySelector('[name="dataFinalizacao"]').value.trim();
+      const servico = form.querySelector('[name="tipoServico"]').value.trim();
+      const custo = form.querySelector('[name="custoEstimado"]').value.trim();
+      const status = form.querySelector('[name="status"]').value.trim();
+
+      if (!veiculo) {
+        showFieldError(prefix, 'veiculoId', 'O veículo é obrigatório');
+        hasError = true;
+      }
+      if (!inicio) {
+        showFieldError(prefix, 'dataInicio', 'A data de início é obrigatória');
+        hasError = true;
+      }
+      if (fim && inicio && fim < inicio) {
+        showFieldError(prefix, 'dataFinalizacao', 'A data de finalização não pode ser anterior à data de início.');
+        hasError = true;
+      }
+      if (!servico) {
+        showFieldError(prefix, 'tipoServico', 'O tipo de serviço é obrigatório');
+        hasError = true;
+      } else if (servico.length > 100) {
+        showFieldError(prefix, 'tipoServico', 'O tipo de serviço não pode ultrapassar 100 caracteres');
+        hasError = true;
+      }
+      if (custo === '') {
+        showFieldError(prefix, 'custoEstimado', 'O custo estimado é obrigatório');
+        hasError = true;
+      } else if (parseFloat(custo) < 0) {
+        showFieldError(prefix, 'custoEstimado', 'O custo estimado não pode ser negativo');
+        hasError = true;
+      }
+      if (!status) {
+        showFieldError(prefix, 'status', 'O status é obrigatório');
+        hasError = true;
+      }
+
+      if (hasError) {
+        const alertBox = document.getElementById(prefix + 'ModalAlert');
+        if (alertBox) {
+          alertBox.textContent = 'Por favor, preencha os campos obrigatórios corretamente.';
+          alertBox.style.display = 'block';
+        }
+      }
+      return !hasError;
+    }
+
+    async function handleModalSubmit(e, form, prefix) {
+      e.preventDefault();
+      clearErrors(prefix);
+
+      if (!validateClientSide(form, prefix)) {
+        return;
+      }
+
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const originalBtnText = submitBtn ? submitBtn.textContent : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Salvando…';
+      }
+
+      try {
+        const formData = new FormData(form);
+        const response = await fetch(form.action, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+
+        const htmlText = await response.text();
+        const doc = new DOMParser().parseFromString(htmlText, 'text/html');
+
+        const hasFormErrors = doc.querySelector('.field-error') !== null || doc.querySelector('.alert.alert-err') !== null;
+        const isFormularioView = doc.querySelector('form.panel') !== null;
+
+        if (hasFormErrors || isFormularioView) {
+          const globalAlert = doc.querySelector('.alert.alert-err');
+          const alertBox = document.getElementById(prefix + 'ModalAlert');
+          if (alertBox) {
+            alertBox.textContent = globalAlert ? globalAlert.textContent.trim() : 'Corrija os erros indicados abaixo.';
+            alertBox.style.display = 'block';
+          }
+
+          const fieldMap = [
+            { name: 'veiculoId', selector: '#veiculo' },
+            { name: 'dataInicio', selector: '#ini' },
+            { name: 'dataFinalizacao', selector: '#fim' },
+            { name: 'tipoServico', selector: '#srv' },
+            { name: 'custoEstimado', selector: '#custo' },
+            { name: 'status', selector: '#status' }
+          ];
+
+          fieldMap.forEach(f => {
+            let errorText = '';
+            const formInput = doc.querySelector(f.selector);
+            if (formInput) {
+              const fieldContainer = formInput.closest('.field');
+              if (fieldContainer) {
+                const errDiv = fieldContainer.querySelector('.field-error');
+                if (errDiv && errDiv.textContent.trim()) {
+                  errorText = errDiv.textContent.trim();
+                }
+              }
+            }
+            if (!errorText && f.name === 'dataFinalizacao') {
+              const fimErr = doc.getElementById('fim-err');
+              if (fimErr && fimErr.textContent.trim()) errorText = fimErr.textContent.trim();
+            }
+            if (errorText) {
+              showFieldError(prefix, f.name, errorText);
+            }
+          });
+
+          const firstInvalid = (prefix === 'create' ? modalCreate : modalEdit).querySelector('.input.is-invalid');
+          if (firstInvalid) firstInvalid.focus();
+
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText;
+          }
+          return;
+        }
+
+        const okAlert = doc.querySelector('.alert.alert-ok');
+        const successMessage = okAlert ? okAlert.textContent.trim() : (prefix === 'create' ? 'Manutenção agendada com sucesso!' : 'Manutenção atualizada com sucesso!');
+        try {
+          sessionStorage.setItem('flashSucesso', successMessage);
+        } catch (e) {}
+
+        window.location.href = '/manutencoes';
+      } catch (err) {
+        console.error('Erro ao enviar formulário:', err);
+        const alertBox = document.getElementById(prefix + 'ModalAlert');
+        if (alertBox) {
+          alertBox.textContent = 'Erro ao se comunicar com o servidor. Verifique sua conexão e tente novamente.';
+          alertBox.style.display = 'block';
+        }
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalBtnText;
+        }
+      }
+    }
+
+    if (formCreate) {
+      formCreate.addEventListener('submit', (e) => handleModalSubmit(e, formCreate, 'create'));
+    }
+
+    if (formEdit) {
+      formEdit.addEventListener('submit', (e) => handleModalSubmit(e, formEdit, 'edit'));
+    }
+  })();
+</script>
+</body></html>

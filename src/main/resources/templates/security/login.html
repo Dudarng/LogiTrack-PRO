@@ -9,6 +9,7 @@
 
   <script th:src="@{/js/theme.js}"></script>
   <link rel="stylesheet" th:href="@{/css/logitrack.css}">
+  <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
 </head>
 
 <body>
@@ -46,9 +47,15 @@
             autocomplete="current-password" required>
         </div>
         <button class="btn" style="height:40px" type="submit">Entrar</button>
+        <div th:if="${demoLogin}" style="display:flex;flex-direction:column;gap:8px;margin-top:12px;text-align:center">
+          <button type="button" id="btnDemoLogin" class="btn btn-ghost" style="height:40px"
+                  th:data-user="${demoUsername}" th:data-pass="${demoPassword}">Usar credenciais de demonstração</button>
+          <span class="sub">Ambiente de demonstração</span>
+        </div>
       </form>
     </div>
   </main>
+  <script th:if="${demoLogin}" th:src="@{/js/login-demo.js}"></script>
 </body>
 
 </html>
